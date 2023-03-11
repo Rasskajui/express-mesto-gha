@@ -1,8 +1,5 @@
 const Card = require('../models/card');
-
-const NOT_FOUND_ERROR_CODE = 404;
-const BAD_REQUEST_ERROR_CODE = 400;
-const DEFAULT_ERROR_CODE = 500;
+const { BAD_REQUEST_ERROR_CODE, NOT_FOUND_ERROR_CODE, DEFAULT_ERROR_CODE } = require('../utils/constants');
 
 module.exports.getCards = (req, res) => {
   Card.find({})
@@ -29,8 +26,19 @@ module.exports.createCard = (req, res) => {
 };
 
 module.exports.deleteCard = (req, res) => {
-  Card.findByIdAndRemove(req.params.cardId)
-    .then(() => res.send({ message: 'Карточка удалена' }))
+  const { cardId } = req.params;
+  if (cardId.length !== 24 || !cardId.match(/[0-9a-f]{6}/g)) {
+    res.status(BAD_REQUEST_ERROR_CODE).send({ message: 'Неккоректный идентификатор карточки' });
+  }
+  Card.findByIdAndRemove(cardId)
+    .then((card) => {
+      if (card) {
+        res.send({ message: 'Карточка удалена' });
+      }
+      const error = new Error();
+      error.name = 'CastError';
+      return Promise.reject(error);
+    })
     .catch((err) => {
       if (err.name === 'CastError') {
         res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Карточка не найдена' });
@@ -41,12 +49,23 @@ module.exports.deleteCard = (req, res) => {
 };
 
 module.exports.likeCard = (req, res) => {
+  const { cardId } = req.params;
+  if (cardId.length !== 24 || !cardId.match(/[0-9a-f]{6}/g)) {
+    res.status(BAD_REQUEST_ERROR_CODE).send({ message: 'Неккоректный идентификатор карточки' });
+  }
   Card.findByIdAndUpdate(
-    req.params.cardId,
+    cardId,
     { $addToSet: { likes: req.user._id } },
     { new: true },
   )
-    .then(() => res.send({ message: 'Карточка лайкнута' }))
+    .then((card) => {
+      if (card) {
+        res.send({ message: 'Карточка лайкнута' });
+      }
+      const error = new Error();
+      error.name = 'CastError';
+      return Promise.reject(error);
+    })
     .catch((err) => {
       if (err.name === 'CastError') {
         res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Карточка не найдена' });
@@ -59,12 +78,23 @@ module.exports.likeCard = (req, res) => {
 };
 
 module.exports.dislikeCard = (req, res) => {
+  const { cardId } = req.params;
+  if (cardId.length !== 24 || !cardId.match(/[0-9a-f]{6}/g)) {
+    res.status(BAD_REQUEST_ERROR_CODE).send({ message: 'Неккоректный идентификатор карточки' });
+  }
   Card.findByIdAndUpdate(
-    req.params.cardId,
+    cardId,
     { $pull: { likes: req.user._id } },
     { new: true },
   )
-    .then(() => res.send({ message: 'Лайк снят с карточки' }))
+    .then((card) => {
+      if (card) {
+        res.send({ message: 'Лайк снят с карточки' });
+      }
+      const error = new Error();
+      error.name = 'CastError';
+      return Promise.reject(error);
+    })
     .catch((err) => {
       if (err.name === 'CastError') {
         res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Карточка не найдена' });
