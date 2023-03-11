@@ -1,8 +1,5 @@
 const User = require('../models/user');
-
-const NOT_FOUND_ERROR_CODE = 404;
-const BAD_REQUEST_ERROR_CODE = 400;
-const DEFAULT_ERROR_CODE = 500;
+const { BAD_REQUEST_ERROR_CODE, NOT_FOUND_ERROR_CODE, DEFAULT_ERROR_CODE } = require('../utils/constants');
 
 module.exports.getUsers = (req, res) => {
   User.find({})
@@ -11,8 +8,19 @@ module.exports.getUsers = (req, res) => {
 };
 
 module.exports.getUser = (req, res) => {
-  User.findById(req.params.userId)
-    .then((user) => res.send(user))
+  const { userId } = req.params;
+  if (userId.length !== 24 || !userId.match(/[0-9a-f]{6}/g)) {
+    res.status(BAD_REQUEST_ERROR_CODE).send({ message: 'Неккоректный идентификатор пользователя' });
+  }
+  User.findById(userId)
+    .then((user) => {
+      if (user) {
+        res.send(user);
+      }
+      const error = new Error();
+      error.name = 'CastError';
+      return Promise.reject(error);
+    })
     .catch((err) => {
       if (err.name === 'CastError') {
         res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Пользователь не найден' });
@@ -38,6 +46,13 @@ module.exports.createUser = (req, res) => {
 
 module.exports.updateProfile = (req, res) => {
   const { name, about } = req.body;
+  if (
+    !name || !about
+    || name.length < 2 || name.length > 30
+    || about.length < 2 || about.length > 30
+  ) {
+    res.status(BAD_REQUEST_ERROR_CODE).send({ message: 'Переданы некорректные данные' });
+  }
   User.findByIdAndUpdate(req.user._id, { name, about }, { new: true })
     .then((user) => res.send({ data: user }))
     .catch((err) => {

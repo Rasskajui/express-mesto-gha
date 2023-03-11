@@ -22,5 +22,9 @@ app.use((req, res, next) => {
 });
 app.use('/users', usersRouter);
 app.use('/cards', cardsRouter);
+app.use((req, res, next) => {
+  res.send({ message: 'Неправильный путь' });
+  next();
+});
 
 app.listen(PORT);
