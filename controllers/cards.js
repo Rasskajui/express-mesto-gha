@@ -26,22 +26,17 @@ module.exports.createCard = (req, res) => {
 };
 
 module.exports.deleteCard = (req, res) => {
-  const { cardId } = req.params;
-  if (cardId.length !== 24 || !cardId.match(/[0-9a-f]{6}/g)) {
-    res.status(BAD_REQUEST_ERROR_CODE).send({ message: 'Неккоректный идентификатор карточки' });
-  }
-  Card.findByIdAndRemove(cardId)
+  Card.findByIdAndRemove(req.params.cardId)
     .then((card) => {
       if (card) {
         res.send({ message: 'Карточка удалена' });
+      } else {
+        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Карточка не найдена' });
       }
-      const error = new Error();
-      error.name = 'CastError';
-      return Promise.reject(error);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Карточка не найдена' });
+        res.status(BAD_REQUEST_ERROR_CODE).send({ message: 'Неккоректный идентификатор карточки' });
       } else {
         res.status(DEFAULT_ERROR_CODE).send({ message: 'На сервере произошла ошибка' });
       }
@@ -49,26 +44,21 @@ module.exports.deleteCard = (req, res) => {
 };
 
 module.exports.likeCard = (req, res) => {
-  const { cardId } = req.params;
-  if (cardId.length !== 24 || !cardId.match(/[0-9a-f]{6}/g)) {
-    res.status(BAD_REQUEST_ERROR_CODE).send({ message: 'Неккоректный идентификатор карточки' });
-  }
   Card.findByIdAndUpdate(
-    cardId,
+    req.params.cardId,
     { $addToSet: { likes: req.user._id } },
     { new: true },
   )
     .then((card) => {
       if (card) {
         res.send({ message: 'Карточка лайкнута' });
+      } else {
+        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Карточка не найдена' });
       }
-      const error = new Error();
-      error.name = 'CastError';
-      return Promise.reject(error);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Карточка не найдена' });
+        res.status(BAD_REQUEST_ERROR_CODE).send({ message: 'Неккоректный идентификатор карточки' });
       } else if (err.name === 'ValidationError') {
         res.status(BAD_REQUEST_ERROR_CODE).send({ message: 'Переданы некорректные данные для постановки лайка' });
       } else {
@@ -78,26 +68,21 @@ module.exports.likeCard = (req, res) => {
 };
 
 module.exports.dislikeCard = (req, res) => {
-  const { cardId } = req.params;
-  if (cardId.length !== 24 || !cardId.match(/[0-9a-f]{6}/g)) {
-    res.status(BAD_REQUEST_ERROR_CODE).send({ message: 'Неккоректный идентификатор карточки' });
-  }
   Card.findByIdAndUpdate(
-    cardId,
+    req.params.cardId,
     { $pull: { likes: req.user._id } },
     { new: true },
   )
     .then((card) => {
       if (card) {
         res.send({ message: 'Лайк снят с карточки' });
+      } else {
+        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Карточка не найдена' });
       }
-      const error = new Error();
-      error.name = 'CastError';
-      return Promise.reject(error);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(NOT_FOUND_ERROR_CODE).send({ message: 'Карточка не найдена' });
+        res.status(BAD_REQUEST_ERROR_CODE).send({ message: 'Неккоректный идентификатор карточки' });
       } else if (err.name === 'ValidationError') {
         res.status(BAD_REQUEST_ERROR_CODE).send({ message: 'Переданы некорректные данные для снятия лайка' });
       } else {
