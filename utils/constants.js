@@ -1,16 +1,8 @@
-const NOT_FOUND_ERROR_CODE = 404;
-const BAD_REQUEST_ERROR_CODE = 400;
-const DEFAULT_ERROR_CODE = 500;
-const UNAUTHORISED_ERROR_CODE = 401;
-const FORBIDDEN_ERROR_CODE = 403;
-
 const NODE_ENV = require('crypto').randomBytes(32).toString('hex');
 
+const urlRegExp = /https?:\/\/(www\.)?[\w-._~:/?#[\]@!$&'()*+,;=]+#?$/i;
+
 module.exports = {
-  NOT_FOUND_ERROR_CODE,
-  BAD_REQUEST_ERROR_CODE,
-  DEFAULT_ERROR_CODE,
-  UNAUTHORISED_ERROR_CODE,
-  FORBIDDEN_ERROR_CODE,
   NODE_ENV,
+  urlRegExp,
 };
