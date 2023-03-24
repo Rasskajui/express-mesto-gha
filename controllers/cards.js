@@ -1,7 +1,6 @@
 const Card = require('../models/card');
 const {
   NotFoundError,
-  BadRequestError,
   ForbiddenError,
 } = require('../utils/errors');
 
@@ -24,24 +23,18 @@ module.exports.createCard = (req, res, next) => {
 };
 
 module.exports.deleteCard = (req, res, next) => {
-  Card.findByIdAndRemove(req.params.cardId)
+  const { cardId } = req.params;
+  Card.findById(cardId).populate('owner')
     .then((card) => {
-      if (card) {
-        if (req.user._id !== card.owner) {
-          next(new ForbiddenError('Нельзя удалить чужую карточку'));
-        }
-        res.send({ message: 'Карточка удалена' });
-      } else {
+      if (!card) {
         next(new NotFoundError('Карточка не найдена'));
+      } else if (req.user._id !== card.owner.id) {
+        next(new ForbiddenError('Нельзя удалить чужую карточку'));
       }
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new BadRequestError('Неккоректный идентификатор карточки'));
-      } else {
-        next(err);
-      }
-    });
+    .then(() => Card.findByIdAndRemove(cardId))
+    .then(() => { res.send({ message: 'Карточка удалена' }); })
+    .catch(next);
 };
 
 module.exports.likeCard = (req, res, next) => {
@@ -57,13 +50,7 @@ module.exports.likeCard = (req, res, next) => {
         next(new NotFoundError('Карточка не найдена'));
       }
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new BadRequestError('Неккоректный идентификатор карточки'));
-      } else {
-        next(err);
-      }
-    });
+    .catch(next);
 };
 
 module.exports.dislikeCard = (req, res, next) => {
@@ -79,11 +66,5 @@ module.exports.dislikeCard = (req, res, next) => {
         next(new NotFoundError('Карточка не найдена'));
       }
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new BadRequestError('Неккоректный идентификатор карточки'));
-      } else {
-        next(err);
-      }
-    });
+    .catch(next);
 };

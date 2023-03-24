@@ -25,13 +25,7 @@ module.exports.getUser = (req, res, next) => {
         next(new NotFoundError('Пользователь не найден'));
       }
     })
-    .catch((err) => {
-      if (err.name === 'CastError') {
-        next(new BadRequestError('Неккоректный идентификатор пользователя'));
-      } else {
-        next(err);
-      }
-    });
+    .catch(next);
 };
 
 module.exports.createUser = (req, res, next) => {
@@ -51,7 +45,11 @@ module.exports.createUser = (req, res, next) => {
       email,
       password: hash,
     }))
-    .then((user) => res.send({ data: user }))
+    .then((user) => {
+      const userObject = user.toObject();
+      delete userObject.password;
+      res.send(userObject);
+    })
     .catch((err) => {
       if (err.code === 11000) {
         next(new ConflictError('Пользователь с данным email уже зарегистрирован'));
@@ -107,8 +105,9 @@ module.exports.login = (req, res, next) => {
       res.cookie('jwt', token, {
         maxAge: 3600000,
         httpOnly: true,
-      }).end();
+      });
     })
+    .then(() => { res.send({ message: 'Авторизация успешна' }); })
     .catch((err) => {
       next(new UnauthorizedError(err.message));
     });

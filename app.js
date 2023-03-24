@@ -38,11 +38,7 @@ app.post('/signup', celebrate({
     avatar: Joi.string().regex(urlRegExp),
   }),
 }), createUser);
-app.use(celebrate({
-  cookies: Joi.object().keys({
-    jwt: Joi.string().required(),
-  }).unknown(true),
-}), auth);
+app.use(auth);
 app.use('/users', usersRouter);
 app.use('/cards', cardsRouter);
 app.use(errors());
