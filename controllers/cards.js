@@ -2,6 +2,7 @@ const Card = require('../models/card');
 const {
   NotFoundError,
   ForbiddenError,
+  BadRequestError,
 } = require('../utils/errors');
 
 module.exports.getCards = (req, res, next) => {
@@ -19,7 +20,13 @@ module.exports.createCard = (req, res, next) => {
     name, link, owner: req.user._id,
   })
     .then((card) => res.send(card))
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Переданы некорректные данные при создании карточки'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 module.exports.deleteCard = (req, res, next) => {
@@ -30,10 +37,10 @@ module.exports.deleteCard = (req, res, next) => {
         next(new NotFoundError('Карточка не найдена'));
       } else if (req.user._id !== card.owner.id) {
         next(new ForbiddenError('Нельзя удалить чужую карточку'));
+      } else {
+        Card.findByIdAndRemove(cardId).then(() => res.send({ message: 'Карточка удалена' }));
       }
     })
-    .then(() => Card.findByIdAndRemove(cardId))
-    .then(() => { res.send({ message: 'Карточка удалена' }); })
     .catch(next);
 };
 

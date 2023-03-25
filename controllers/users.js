@@ -5,7 +5,6 @@ const { NODE_ENV } = require('../utils/constants');
 const {
   NotFoundError,
   BadRequestError,
-  UnauthorizedError,
   ConflictError,
 } = require('../utils/errors');
 
@@ -53,6 +52,8 @@ module.exports.createUser = (req, res, next) => {
     .catch((err) => {
       if (err.code === 11000) {
         next(new ConflictError('Пользователь с данным email уже зарегистрирован'));
+      } else if (err.name === 'ValidationError') {
+        next(new BadRequestError('Переданы некорректные данные при регистрации пользователя'));
       } else {
         next(err);
       }
@@ -72,6 +73,8 @@ module.exports.updateProfile = (req, res, next) => {
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new BadRequestError('Некорректный идентификатор пользователя'));
+      } else if (err.name === 'ValidationError') {
+        next(new BadRequestError('Переданы некорректные данные при обновлении профиля'));
       } else {
         next(err);
       }
@@ -91,6 +94,8 @@ module.exports.updateAvatar = (req, res, next) => {
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new BadRequestError('Некорректный идентификатор пользователя'));
+      } else if (err.name === 'ValidationError') {
+        next(new BadRequestError('Переданы некорректные данные при обновлении аватара'));
       } else {
         next(err);
       }
@@ -108,9 +113,7 @@ module.exports.login = (req, res, next) => {
       });
     })
     .then(() => { res.send({ message: 'Авторизация успешна' }); })
-    .catch((err) => {
-      next(new UnauthorizedError(err.message));
-    });
+    .catch(next);
 };
 
 module.exports.getUserInfo = (req, res, next) => {

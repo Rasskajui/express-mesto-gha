@@ -2,15 +2,17 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
-const { celebrate, Joi, errors } = require('celebrate');
+const { errors } = require('celebrate');
+const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 
-const { urlRegExp } = require('./utils/constants');
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+});
 
-const usersRouter = require('./routes/users');
-const cardsRouter = require('./routes/cards');
+const routes = require('./routes');
 
-const { createUser, login } = require('./controllers/users');
-const auth = require('./middlewares/auth');
 const errorsHandler = require('./middlewares/errors');
 
 const app = express();
@@ -21,31 +23,12 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
   useNewUrlParser: true,
 });
 
+app.use(limiter);
+app.use(helmet());
 app.use(cookieParser());
 app.use(bodyParser.json());
-app.post('/signin', celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required(),
-  }),
-}), login);
-app.post('/signup', celebrate({
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required(),
-    name: Joi.string().min(2).max(30),
-    about: Joi.string().min(2).max(30),
-    avatar: Joi.string().regex(urlRegExp),
-  }),
-}), createUser);
-app.use(auth);
-app.use('/users', usersRouter);
-app.use('/cards', cardsRouter);
+app.use(routes);
 app.use(errors());
 app.use(errorsHandler);
-app.use((req, res, next) => {
-  res.status(404).send({ message: 'Неправильный путь' });
-  next();
-});
 
 app.listen(PORT);
